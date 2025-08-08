@@ -22,8 +22,7 @@
         }
         
         #root {
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
         }
         
         /* Prevent zoom on mobile */
@@ -46,6 +45,15 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+
+        /* Only lock scrolling on swipe screen */
+        .swipe-locked {
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+            touch-action: none;
         }
     </style>
 </head>
@@ -826,9 +834,8 @@
           }
 
           return React.createElement('div', {
-            className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col fixed inset-0 overflow-hidden",
+            className: "swipe-locked min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col",
             style: { 
-              touchAction: 'none',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               WebkitTouchCallout: 'none'
