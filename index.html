@@ -1,0 +1,72 @@
+# contact-updater
+web app for updating crm data
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Updater - LinkedIn Swipe App</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; font-family: system-ui; }
+        #root { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useCallback } = React;
+        
+        const App = () => {
+            const [step, setStep] = useState('setup');
+            
+            if (step === 'setup') {
+                return React.createElement('div', {
+                    className: 'min-h-screen bg-blue-50 flex items-center justify-center p-4'
+                }, React.createElement('div', {
+                    className: 'bg-white rounded-xl p-8 max-w-md text-center shadow-lg'
+                }, [
+                    React.createElement('h1', { 
+                        key: 'title',
+                        className: 'text-2xl font-bold mb-4' 
+                    }, 'Contact Updater'),
+                    React.createElement('p', { 
+                        key: 'desc',
+                        className: 'text-gray-600 mb-6' 
+                    }, 'Swipe through contacts to organize them quickly!'),
+                    React.createElement('button', {
+                        key: 'btn',
+                        className: 'bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600',
+                        onClick: () => setStep('app')
+                    }, 'Start App')
+                ]));
+            }
+            
+            return React.createElement('div', {
+                className: 'min-h-screen bg-green-50 flex items-center justify-center p-4'
+            }, React.createElement('div', {
+                className: 'bg-white rounded-xl p-8 max-w-md text-center shadow-lg'
+            }, [
+                React.createElement('h2', { 
+                    key: 'success',
+                    className: 'text-2xl font-bold text-green-600 mb-4' 
+                }, '🎉 Success!'),
+                React.createElement('p', { 
+                    key: 'msg',
+                    className: 'text-gray-600 mb-6' 
+                }, 'Your Contact Updater is working! We can now add the full functionality.'),
+                React.createElement('button', {
+                    key: 'back',
+                    className: 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600',
+                    onClick: () => setStep('setup')
+                }, 'Back to Setup')
+            ]));
+        };
+        
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+</body>
+</html>
