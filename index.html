@@ -1,5 +1,3 @@
-# contact-updater
-web app for updating crm data
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,63 +8,869 @@ web app for updating crm data
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>">
     <style>
-        body { margin: 0; font-family: system-ui; }
-        #root { height: 100vh; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        #root {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Prevent zoom on mobile */
+        input, textarea, select {
+            font-size: 16px;
+        }
+        
+        /* Improve touch targets on mobile */
+        button {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        /* Lucide icons */
+        .lucide {
+            width: 1em;
+            height: 1em;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
+
     <script type="text/babel">
-        const { useState, useCallback } = React;
-        
-        const App = () => {
-            const [step, setStep] = useState('setup');
+        const { useState, useRef, useCallback, useMemo } = React;
+
+        // Simple Lucide icon components
+        const ChevronUp = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, React.createElement('path', { d: "m18 15-6-6-6 6" }));
+
+        const ChevronDown = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, React.createElement('path', { d: "m6 9 6 6 6-6" }));
+
+        const ChevronLeft = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, React.createElement('path', { d: "m15 18-6-6 6-6" }));
+
+        const ChevronRight = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, React.createElement('path', { d: "m9 18 6-6-6-6" }));
+
+        const Upload = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, [
+                React.createElement('path', { key: 1, d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+                React.createElement('polyline', { key: 2, points: "17,8 12,3 7,8" }),
+                React.createElement('line', { key: 3, x1: "12", x2: "12", y1: "3", y2: "15" })
+            ]);
+
+        const Settings = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, [
+                React.createElement('path', { key: 1, d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" }),
+                React.createElement('circle', { key: 2, cx: "12", cy: "12", r: "3" })
+            ]);
+
+        const Play = ({ size = 20, className = "", ...props }) => 
+            React.createElement('svg', { 
+                className: `lucide ${className}`, 
+                width: size, 
+                height: size, 
+                viewBox: "0 0 24 24",
+                ...props 
+            }, React.createElement('polygon', { points: "6,3 20,12 6,21" }));
+
+        // ============================================================================
+        // CONSTANTS
+        // ============================================================================
+
+        const SWIPE_THRESHOLD = 100;
+        const DRAG_THRESHOLD = 50;
+        const BUTTON_HIGHLIGHT_DURATION = 300;
+
+        const SWIPE_ACTIONS = Object.freeze({
+          UP: 'up',
+          DOWN: 'down',
+          LEFT: 'left',
+          RIGHT: 'right'
+        });
+
+        const SWIPE_CONFIG = Object.freeze({
+          [SWIPE_ACTIONS.UP]: { label: 'SUPER WARM', color: 'yellow', icon: ChevronUp, bgClass: 'bg-yellow-400' },
+          [SWIPE_ACTIONS.DOWN]: { label: 'UNKNOWN', color: 'blue', icon: ChevronDown, bgClass: 'bg-blue-400' },
+          [SWIPE_ACTIONS.LEFT]: { label: "DON'T INCLUDE", color: 'red', icon: ChevronLeft, bgClass: 'bg-red-400' },
+          [SWIPE_ACTIONS.RIGHT]: { label: 'INCLUDE', color: 'green', icon: ChevronRight, bgClass: 'bg-green-400' }
+        });
+
+        const COLOR_PALETTE = Object.freeze([
+          'bg-red-100', 'bg-orange-100', 'bg-yellow-100', 'bg-green-100', 
+          'bg-blue-100', 'bg-purple-100', 'bg-pink-100', 'bg-indigo-100'
+        ]);
+
+        const EMOJI_PALETTE = Object.freeze([
+          '🍎', '🥕', '🍌', '🥒', '🍇', '🍓', '🥝', '🍊', '🍒', '🥭', '🍑', '🫐'
+        ]);
+
+        const SAMPLE_PROFILES = Object.freeze([
+          { id: 1, name: "Sarah Johnson", emoji: "🍎", color: "bg-red-100", linkedinUrl: "https://www.linkedin.com/in/sarah-johnson" },
+          { id: 2, name: "Michael Chen", emoji: "🥕", color: "bg-orange-100", linkedinUrl: "https://www.linkedin.com/in/michael-chen" },
+          { id: 3, name: "Emily Rodriguez", emoji: "🍌", color: "bg-yellow-100", linkedinUrl: "https://www.linkedin.com/in/emily-rodriguez" },
+          { id: 4, name: "David Park", emoji: "🥒", color: "bg-green-100", linkedinUrl: "https://www.linkedin.com/in/david-park" },
+          { id: 5, name: "Lisa Thompson", emoji: "🍇", color: "bg-purple-100", linkedinUrl: "https://www.linkedin.com/in/lisa-thompson" },
+          { id: 6, name: "James Wilson", emoji: "🍓", color: "bg-pink-100", linkedinUrl: "https://www.linkedin.com/in/james-wilson" },
+          { id: 7, name: "Amanda Martinez", emoji: "🥝", color: "bg-green-200", linkedinUrl: "https://www.linkedin.com/in/amanda-martinez" },
+          { id: 8, name: "Robert Kim", emoji: "🍊", color: "bg-orange-200", linkedinUrl: "https://www.linkedin.com/in/robert-kim" }
+        ]);
+
+        // ============================================================================
+        // UTILITIES
+        // ============================================================================
+
+        const findColumnIndex = (headers, fields) => {
+          for (const field of fields) {
+            const index = headers.findIndex(h => h.includes(field));
+            if (index !== -1) return index;
+          }
+          return -1;
+        };
+
+        const parseCsvData = (csvText) => {
+          const lines = csvText.trim().split('\n');
+          if (lines.length < 2) return [];
+          
+          const headers = lines[0].split(/[,\t]/).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+          
+          const nameFields = ['name', 'full name', 'fullname'];
+          const firstNameFields = ['first name', 'firstname'];
+          const lastNameFields = ['last name', 'lastname'];
+          const linkedinFields = ['linkedin', 'linkedin url', 'linkedin profile', 'profile url', 'url'];
+          const titleFields = ['title', 'job title', 'position', 'role'];
+          const companyFields = ['company', 'organization', 'employer'];
+          
+          const nameCol = findColumnIndex(headers, nameFields);
+          const firstNameCol = findColumnIndex(headers, firstNameFields);
+          const lastNameCol = findColumnIndex(headers, lastNameFields);
+          const linkedinCol = findColumnIndex(headers, linkedinFields);
+          const titleCol = findColumnIndex(headers, titleFields);
+          const companyCol = findColumnIndex(headers, companyFields);
+          
+          return lines.slice(1).reduce((profiles, line, index) => {
+            const row = line.split(/[,\t]/).map(cell => cell.trim().replace(/['"]/g, ''));
             
-            if (step === 'setup') {
-                return React.createElement('div', {
-                    className: 'min-h-screen bg-blue-50 flex items-center justify-center p-4'
-                }, React.createElement('div', {
-                    className: 'bg-white rounded-xl p-8 max-w-md text-center shadow-lg'
-                }, [
-                    React.createElement('h1', { 
-                        key: 'title',
-                        className: 'text-2xl font-bold mb-4' 
-                    }, 'Contact Updater'),
-                    React.createElement('p', { 
-                        key: 'desc',
-                        className: 'text-gray-600 mb-6' 
-                    }, 'Swipe through contacts to organize them quickly!'),
-                    React.createElement('button', {
-                        key: 'btn',
-                        className: 'bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600',
-                        onClick: () => setStep('app')
-                    }, 'Start App')
-                ]));
+            let name = '';
+            if (nameCol !== -1) {
+              name = row[nameCol] || '';
+            } else if (firstNameCol !== -1 && lastNameCol !== -1) {
+              name = `${row[firstNameCol] || ''} ${row[lastNameCol] || ''}`.trim();
+            } else if (firstNameCol !== -1) {
+              name = row[firstNameCol] || '';
             }
             
-            return React.createElement('div', {
-                className: 'min-h-screen bg-green-50 flex items-center justify-center p-4'
-            }, React.createElement('div', {
-                className: 'bg-white rounded-xl p-8 max-w-md text-center shadow-lg'
-            }, [
-                React.createElement('h2', { 
-                    key: 'success',
-                    className: 'text-2xl font-bold text-green-600 mb-4' 
-                }, '🎉 Success!'),
-                React.createElement('p', { 
-                    key: 'msg',
-                    className: 'text-gray-600 mb-6' 
-                }, 'Your Contact Updater is working! We can now add the full functionality.'),
-                React.createElement('button', {
-                    key: 'back',
-                    className: 'bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600',
-                    onClick: () => setStep('setup')
-                }, 'Back to Setup')
-            ]));
+            if (!name) return profiles;
+            
+            let linkedinUrl = linkedinCol !== -1 ? row[linkedinCol] : '';
+            if (linkedinUrl && !linkedinUrl.startsWith('http')) {
+              linkedinUrl = `https://${linkedinUrl}`;
+            }
+            
+            const title = titleCol !== -1 ? row[titleCol] : '';
+            const company = companyCol !== -1 ? row[companyCol] : '';
+            
+            profiles.push({
+              id: index + 1,
+              name,
+              linkedinUrl,
+              title,
+              company,
+              emoji: EMOJI_PALETTE[index % EMOJI_PALETTE.length],
+              color: COLOR_PALETTE[index % COLOR_PALETTE.length]
+            });
+            
+            return profiles;
+          }, []);
         };
-        
-        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+
+        const determineSwipeDirection = (deltaX, deltaY) => {
+          const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+          
+          if (isHorizontal) {
+            return deltaX > DRAG_THRESHOLD ? SWIPE_ACTIONS.RIGHT : 
+                   deltaX < -DRAG_THRESHOLD ? SWIPE_ACTIONS.LEFT : null;
+          }
+          
+          return deltaY > DRAG_THRESHOLD ? SWIPE_ACTIONS.DOWN : 
+                 deltaY < -DRAG_THRESHOLD ? SWIPE_ACTIONS.UP : null;
+        };
+
+        const createDecision = (profile, direction) => ({
+          profileId: profile.id,
+          name: profile.name,
+          direction,
+          timestamp: new Date().toISOString()
+        });
+
+        // ============================================================================
+        // HOOKS
+        // ============================================================================
+
+        const useSwipeGesture = (onSwipe) => {
+          const startPos = useRef({ x: 0, y: 0 });
+          
+          const handleTouchStart = useCallback((e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            startPos.current = { x: touch.clientX, y: touch.clientY };
+          }, []);
+
+          const handleTouchEnd = useCallback((e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const touch = e.changedTouches[0];
+            const deltaX = touch.clientX - startPos.current.x;
+            const deltaY = touch.clientY - startPos.current.y;
+            
+            if (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD) {
+              const direction = determineSwipeDirection(deltaX, deltaY);
+              if (direction) onSwipe(direction);
+            }
+          }, [onSwipe]);
+
+          return { handleTouchStart, handleTouchEnd };
+        };
+
+        // ============================================================================
+        // COMPONENTS
+        // ============================================================================
+
+        const SwipeButton = React.memo(({ direction, config, isTriggered, onClick }) => {
+          const swipeConfig = SWIPE_CONFIG[direction];
+          const userConfig = config[direction];
+          const Icon = swipeConfig.icon;
+          
+          const isVertical = direction === SWIPE_ACTIONS.UP || direction === SWIPE_ACTIONS.DOWN;
+          
+          const positionClasses = useMemo(() => {
+            const positions = {
+              [SWIPE_ACTIONS.UP]: 'absolute -top-1 left-1/2 transform -translate-x-1/2',
+              [SWIPE_ACTIONS.DOWN]: 'absolute -bottom-1 left-1/2 transform -translate-x-1/2',
+              [SWIPE_ACTIONS.LEFT]: 'absolute left-1 top-1/2 transform -translate-y-1/2',
+              [SWIPE_ACTIONS.RIGHT]: 'absolute right-1 top-1/2 transform -translate-y-1/2'
+            };
+            return positions[direction];
+          }, [direction]);
+
+          const handleClick = useCallback((e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(direction);
+          }, [direction, onClick]);
+
+          const iconClassName = useMemo(() => {
+            if (isVertical) {
+              return direction === SWIPE_ACTIONS.UP ? 'mb-1' : 'mt-1';
+            }
+            return direction === SWIPE_ACTIONS.LEFT ? 'mr-1' : 'ml-1';
+          }, [direction, isVertical]);
+
+          return React.createElement('button', {
+            onClick: handleClick,
+            onMouseDown: (e) => e.stopPropagation(),
+            onMouseUp: (e) => e.stopPropagation(),
+            onTouchStart: (e) => e.stopPropagation(),
+            onTouchEnd: (e) => e.stopPropagation(),
+            className: `${positionClasses} transition-all duration-200 focus:outline-none z-20 cursor-pointer ${
+              isTriggered 
+                ? `scale-125 opacity-100 bg-${swipeConfig.color}-500 text-white shadow-lg` 
+                : `opacity-70 hover:scale-105 hover:opacity-100 bg-${swipeConfig.color}-100 text-${swipeConfig.color}-700`
+            }`,
+            'aria-label': `${userConfig.label} action`
+          }, React.createElement('div', {
+            className: `flex ${isVertical ? 'flex-col' : 'flex-row'} items-center px-3 py-2 rounded-full hover:shadow-md`
+          }, 
+            direction === SWIPE_ACTIONS.RIGHT && React.createElement('span', {
+              className: `text-xs font-bold whitespace-nowrap ${isTriggered ? 'text-sm' : ''}`
+            }, userConfig.label),
+            React.createElement(Icon, { size: isTriggered ? 24 : 20, className: iconClassName }),
+            direction !== SWIPE_ACTIONS.RIGHT && React.createElement('span', {
+              className: `text-xs font-bold whitespace-nowrap ${isTriggered ? 'text-sm' : ''}`
+            }, userConfig.label)
+          ));
+        });
+
+        const BackgroundCard = React.memo(({ visible, index }) => {
+          if (!visible) return null;
+          
+          const styles = useMemo(() => {
+            const configs = [
+              { scale: 'scale-95', opacity: 'opacity-30', translateY: 'translate-y-2', shadow: 'shadow-lg' },
+              { scale: 'scale-90', opacity: 'opacity-20', translateY: 'translate-y-4', shadow: 'shadow-md' }
+            ];
+            return configs[index] || configs[1];
+          }, [index]);
+          
+          return React.createElement('div', {
+            className: `absolute bg-white rounded-2xl ${styles.shadow} ${styles.opacity} transform ${styles.scale} ${styles.translateY}`,
+            style: {
+              width: '320px',
+              height: '200px',
+              left: '50%',
+              top: '50%',
+              marginLeft: '-160px',
+              marginTop: '-100px'
+            },
+            'aria-hidden': true
+          });
+        });
+
+        const ProfileCard = React.memo(({ 
+          profile, 
+          config,
+          triggeredDirection, 
+          onSwipe,
+          onTouchStart,
+          onTouchEnd
+        }) => {
+          const handleButtonClick = useCallback((direction) => {
+            onSwipe(direction);
+          }, [onSwipe]);
+
+          const handleLinkClick = useCallback((e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              window.open(profile.linkedinUrl, '_blank', 'noopener,noreferrer');
+            } catch (error) {
+              window.location.href = profile.linkedinUrl;
+            }
+          }, [profile.linkedinUrl]);
+
+          return React.createElement('div', {
+            className: "bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 select-none relative z-10",
+            onTouchStart,
+            onTouchEnd
+          }, 
+            ...Object.values(SWIPE_ACTIONS).map(direction => 
+              React.createElement(SwipeButton, {
+                key: direction,
+                direction,
+                config,
+                isTriggered: triggeredDirection === direction,
+                onClick: handleButtonClick
+              })
+            ),
+            React.createElement('div', { className: "p-6 text-center relative" },
+              React.createElement('div', {
+                className: `w-32 h-32 mx-auto mb-2 rounded-full shadow-lg ${profile.color} flex items-center justify-center`
+              }, React.createElement('span', {
+                className: "text-6xl",
+                role: "img",
+                'aria-label': "Profile avatar"
+              }, profile.emoji)),
+              React.createElement('div', { className: "mb-6" },
+                profile.linkedinUrl ? 
+                  React.createElement('button', {
+                    onClick: handleLinkClick,
+                    className: "text-2xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors z-50 relative"
+                  }, profile.name) :
+                  React.createElement('h3', {
+                    className: "text-2xl font-bold text-gray-800"
+                  }, profile.name)
+              ),
+              profile.title && React.createElement('p', {
+                className: "text-gray-600 text-sm mb-1"
+              }, profile.title),
+              profile.company && React.createElement('p', {
+                className: "text-gray-500 text-sm"
+              }, profile.company)
+            )
+          );
+        });
+
+        const ConfigurationScreen = React.memo(({ onStart }) => {
+          const [swipeConfig, setSwipeConfig] = useState(() => {
+            return Object.keys(SWIPE_ACTIONS).reduce((config, key) => {
+              const direction = SWIPE_ACTIONS[key];
+              config[direction] = { ...SWIPE_CONFIG[direction] };
+              return config;
+            }, {});
+          });
+          
+          const [crmData, setCrmData] = useState('');
+          const [profiles, setProfiles] = useState(SAMPLE_PROFILES);
+          const [dataSource, setDataSource] = useState('sample');
+          
+          const showPreview = dataSource === 'csv' && profiles.length > 0;
+          
+          const handleConfigChange = useCallback((direction, value) => {
+            setSwipeConfig(prev => ({
+              ...prev,
+              [direction]: { ...prev[direction], label: value }
+            }));
+          }, []);
+          
+          const handleCRMUpload = useCallback((event) => {
+            const text = event.target.value;
+            setCrmData(text);
+            
+            if (text.trim()) {
+              try {
+                const parsedProfiles = parseCsvData(text);
+                setProfiles(parsedProfiles);
+                setDataSource('csv');
+              } catch (error) {
+                console.error('Error parsing CRM data:', error);
+              }
+            }
+          }, []);
+          
+          const handleDataSourceChange = useCallback((source) => {
+            setDataSource(source);
+            if (source === 'sample') {
+              setProfiles(SAMPLE_PROFILES);
+              setCrmData('');
+            }
+          }, []);
+          
+          const handleStart = useCallback(() => {
+            onStart(swipeConfig, profiles);
+          }, [onStart, swipeConfig, profiles]);
+
+          const previewProfiles = useMemo(() => profiles.slice(0, 5), [profiles]);
+
+          return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4" },
+            React.createElement('div', { className: "max-w-4xl mx-auto" },
+              React.createElement('div', { className: "bg-white rounded-2xl shadow-xl p-8" },
+                React.createElement('div', { className: "flex items-center gap-3 mb-8" },
+                  React.createElement(Settings, { className: "w-8 h-8 text-blue-600" }),
+                  React.createElement('h1', { className: "text-3xl font-bold text-gray-800" }, "Contact Updater Setup")
+                ),
+                React.createElement('div', { className: "mb-8" },
+                  React.createElement('h2', { className: "text-xl font-semibold text-gray-800 mb-4" }, "Configure Swipe Directions"),
+                  React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                    Object.entries(SWIPE_ACTIONS).map(([key, direction]) =>
+                      React.createElement('div', { key: direction, className: "border rounded-lg p-4" },
+                        React.createElement('h3', { className: "font-medium text-gray-700 mb-3 capitalize flex items-center gap-2" },
+                          React.createElement('span', { className: `w-4 h-4 rounded-full ${SWIPE_CONFIG[direction].bgClass}` }),
+                          `${direction} Direction ${SWIPE_CONFIG[direction].label === 'SUPER WARM' ? '⬆️' : 
+                                               SWIPE_CONFIG[direction].label === 'UNKNOWN' ? '⬇️' :
+                                               SWIPE_CONFIG[direction].label === "DON'T INCLUDE" ? '⬅️' : '➡️'}`
+                        ),
+                        React.createElement('div', {},
+                          React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-1" }, "Label"),
+                          React.createElement('input', {
+                            type: "text",
+                            value: swipeConfig[direction].label,
+                            onChange: (e) => handleConfigChange(direction, e.target.value),
+                            className: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                            placeholder: "Enter action label"
+                          })
+                        )
+                      )
+                    )
+                  )
+                ),
+                React.createElement('div', { className: "mb-8" },
+                  React.createElement('h2', { className: "text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2" },
+                    React.createElement(Upload, { className: "w-5 h-5" }),
+                    "CRM Data"
+                  ),
+                  React.createElement('div', { className: "mb-4" },
+                    React.createElement('div', { className: "flex gap-4 mb-4" },
+                      React.createElement('label', { className: "flex items-center" },
+                        React.createElement('input', {
+                          type: "radio",
+                          checked: dataSource === 'sample',
+                          onChange: () => handleDataSourceChange('sample'),
+                          className: "mr-2"
+                        }),
+                        "Use Sample Data"
+                      ),
+                      React.createElement('label', { className: "flex items-center" },
+                        React.createElement('input', {
+                          type: "radio",
+                          checked: dataSource === 'csv',
+                          onChange: () => handleDataSourceChange('csv'),
+                          className: "mr-2"
+                        }),
+                        "Upload CSV Data"
+                      )
+                    )
+                  ),
+                  dataSource === 'csv' && React.createElement('div', {},
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-2" },
+                      "Paste your CRM data (CSV format)"
+                    ),
+                    React.createElement('p', { className: "text-sm text-gray-500 mb-3" },
+                      "Supports flexible column names: Name, LinkedIn URL, Title, Company. Copy directly from Excel/Google Sheets."
+                    ),
+                    React.createElement('textarea', {
+                      value: crmData,
+                      onChange: handleCRMUpload,
+                      className: "w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm",
+                      placeholder: "Name,LinkedIn URL,Title,Company\nJohn Smith,linkedin.com/in/johnsmith,Manager,TechCorp\nJane Doe,linkedin.com/in/janedoe,Director,StartupXYZ"
+                    }),
+                    showPreview && React.createElement('div', { className: "mt-4 p-4 bg-gray-50 rounded-lg" },
+                      React.createElement('h3', { className: "font-medium text-gray-700 mb-2" }, `Preview (${profiles.length} profiles loaded)`),
+                      React.createElement('div', { className: "space-y-2 max-h-40 overflow-y-auto" },
+                        previewProfiles.map(profile =>
+                          React.createElement('div', { key: profile.id, className: "text-sm flex items-center gap-2" },
+                            React.createElement('span', { className: "text-lg" }, profile.emoji),
+                            React.createElement('span', { className: "font-medium" }, profile.name),
+                            profile.title && React.createElement('span', { className: "text-gray-500" }, `- ${profile.title}`),
+                            profile.linkedinUrl && React.createElement('span', { className: "text-blue-500" }, "✓")
+                          )
+                        ),
+                        profiles.length > 5 && React.createElement('div', { className: "text-sm text-gray-500" }, `... and ${profiles.length - 5} more`)
+                      )
+                    )
+                  ),
+                  dataSource === 'sample' && React.createElement('div', { className: "p-4 bg-gray-50 rounded-lg" },
+                    React.createElement('p', { className: "text-sm text-gray-600 mb-2" }, `Using sample data with ${SAMPLE_PROFILES.length} profiles`),
+                    React.createElement('div', { className: "flex gap-2" },
+                      SAMPLE_PROFILES.slice(0, 5).map(profile =>
+                        React.createElement('span', { key: profile.id, className: "text-lg" }, profile.emoji)
+                      )
+                    )
+                  )
+                ),
+                React.createElement('div', { className: "flex justify-center" },
+                  React.createElement('button', {
+                    onClick: handleStart,
+                    disabled: profiles.length === 0,
+                    className: "flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                  },
+                    React.createElement(Play, { className: "w-5 h-5" }),
+                    `Start Swiping (${profiles.length} profiles)`
+                  )
+                )
+              )
+            )
+          );
+        });
+
+        const ResultsTable = React.memo(({ decisions, config, onBack }) => {
+          const sortedDecisions = useMemo(() => 
+            [...decisions].sort((a, b) => a.name.localeCompare(b.name)), 
+            [decisions]
+          );
+
+          const groupedResults = useMemo(() => {
+            const groups = {};
+            Object.values(SWIPE_ACTIONS).forEach(action => {
+              groups[action] = decisions.filter(d => d.direction === action);
+            });
+            return groups;
+          }, [decisions]);
+
+          const exportData = useCallback(() => {
+            const header = 'Name,Action,Timestamp\n';
+            const rows = sortedDecisions.map(decision => {
+              const name = decision.name.replace(/"/g, '""');
+              const action = (config[decision.direction]?.label || decision.direction).replace(/"/g, '""');
+              const timestamp = new Date(decision.timestamp).toLocaleString();
+              return `"${name}","${action}","${timestamp}"`;
+            }).join('\n');
+            
+            const csvContent = '\uFEFF' + header + rows;
+            
+            const element = document.createElement('a');
+            const file = new Blob([csvContent], { 
+              type: 'text/csv;charset=utf-8;' 
+            });
+            element.href = URL.createObjectURL(file);
+            element.download = `contact-updater-results-${new Date().toISOString().split('T')[0]}.csv`;
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            URL.revokeObjectURL(element.href);
+          }, [sortedDecisions, config]);
+
+          return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4" },
+            React.createElement('div', { className: "max-w-6xl mx-auto" },
+              React.createElement('div', { className: "bg-white rounded-2xl shadow-xl p-8" },
+                React.createElement('div', { className: "flex items-center justify-between mb-8" },
+                  React.createElement('h1', { className: "text-3xl font-bold text-gray-800" }, "Swipe Results Summary"),
+                  React.createElement('div', { className: "flex gap-3" },
+                    React.createElement('button', {
+                      onClick: exportData,
+                      className: "flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    },
+                      React.createElement(Upload, { className: "w-4 h-4" }),
+                      "Export CSV"
+                    ),
+                    React.createElement('button', {
+                      onClick: onBack,
+                      className: "bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    }, "Back")
+                  )
+                ),
+                React.createElement('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" },
+                  Object.entries(SWIPE_ACTIONS).map(([key, action]) => {
+                    const count = groupedResults[action]?.length || 0;
+                    const percentage = decisions.length > 0 ? Math.round((count / decisions.length) * 100) : 0;
+                    const actionConfig = SWIPE_CONFIG[action];
+                    
+                    return React.createElement('div', { key: action, className: "bg-gray-50 rounded-lg p-4 text-center" },
+                      React.createElement('div', { className: `w-8 h-8 rounded-full ${actionConfig.bgClass} mx-auto mb-2` }),
+                      React.createElement('h3', { className: "font-semibold text-gray-800" }, config[action]?.label || actionConfig.label),
+                      React.createElement('p', { className: "text-2xl font-bold text-gray-900" }, count),
+                      React.createElement('p', { className: "text-sm text-gray-500" }, `${percentage}%`)
+                    );
+                  })
+                ),
+                React.createElement('div', { className: "bg-white border rounded-lg overflow-hidden" },
+                  React.createElement('div', { className: "overflow-x-auto" },
+                    React.createElement('table', { className: "w-full" },
+                      React.createElement('thead', { className: "bg-gray-50" },
+                        React.createElement('tr', {},
+                          React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Name"),
+                          React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Action Taken"),
+                          React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Direction"),
+                          React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Timestamp")
+                        )
+                      ),
+                      React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
+                        sortedDecisions.map((decision, index) => {
+                          const actionConfig = SWIPE_CONFIG[decision.direction];
+                          const userLabel = config[decision.direction]?.label || actionConfig.label;
+                          
+                          return React.createElement('tr', { key: `${decision.profileId}-${index}`, className: "hover:bg-gray-50" },
+                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap" },
+                              React.createElement('div', { className: "text-sm font-medium text-gray-900" }, decision.name)
+                            ),
+                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap" },
+                              React.createElement('div', { className: "flex items-center gap-2" },
+                                React.createElement('span', { className: `w-3 h-3 rounded-full ${actionConfig.bgClass}` }),
+                                React.createElement('span', { className: "text-sm text-gray-900" }, userLabel)
+                              )
+                            ),
+                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap" },
+                              React.createElement('span', { className: "text-sm text-gray-500 capitalize" },
+                                decision.direction === 'up' ? '⬆️ Up' :
+                                decision.direction === 'down' ? '⬇️ Down' :
+                                decision.direction === 'left' ? '⬅️ Left' : '➡️ Right'
+                              )
+                            ),
+                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
+                              new Date(decision.timestamp).toLocaleString()
+                            )
+                          );
+                        })
+                      )
+                    )
+                  )
+                ),
+                decisions.length === 0 && React.createElement('div', { className: "text-center py-8" },
+                  React.createElement('p', { className: "text-gray-500" }, "No decisions recorded yet.")
+                )
+              )
+            )
+          );
+        });
+
+        const CompletionScreen = React.memo(({ decisionsCount, onRestart, onReconfigure, onViewResults }) =>
+          React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4" },
+            React.createElement('div', { className: "bg-white rounded-2xl shadow-xl p-8 text-center max-w-md" },
+              React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4" }, "All Done!"),
+              React.createElement('p', { className: "text-gray-600 mb-6" }, "You've reviewed all profiles in your stack."),
+              React.createElement('div', { className: "text-sm text-gray-500 mb-6" },
+                React.createElement('p', {}, `Decisions made: ${decisionsCount}`)
+              ),
+              React.createElement('div', { className: "space-y-3" },
+                React.createElement('button', {
+                  onClick: onViewResults,
+                  className: "w-full bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                }, "View Results Summary"),
+                React.createElement('button', {
+                  onClick: onRestart,
+                  className: "w-full bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                }, "Start Over (Same Config)"),
+                React.createElement('button', {
+                  onClick: onReconfigure,
+                  className: "w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                }, "New Configuration")
+              )
+            )
+          )
+        );
+
+        const LinkedInSwipeApp = () => {
+          const [appState, setAppState] = useState('config');
+          const [swipeConfig, setSwipeConfig] = useState({});
+          const [originalProfiles, setOriginalProfiles] = useState([]);
+          const [currentIndex, setCurrentIndex] = useState(0);
+          const [profiles, setProfiles] = useState([]);
+          const [decisions, setDecisions] = useState([]);
+          const [triggeredDirection, setTriggeredDirection] = useState(null);
+          
+          const currentProfile = profiles[currentIndex];
+          
+          const handleStart = useCallback((config, profileData) => {
+            setSwipeConfig(config);
+            setOriginalProfiles(profileData);
+            setProfiles([...profileData]);
+            setCurrentIndex(0);
+            setDecisions([]);
+            setTriggeredDirection(null);
+            setAppState('swiping');
+          }, []);
+          
+          const handleReconfigure = useCallback(() => {
+            setAppState('config');
+          }, []);
+          
+          const handleRestart = useCallback(() => {
+            setProfiles([...originalProfiles]);
+            setCurrentIndex(0);
+            setDecisions([]);
+            setTriggeredDirection(null);
+            setAppState('swiping');
+          }, [originalProfiles]);
+
+          const handleViewResults = useCallback(() => {
+            setAppState('results');
+          }, []);
+
+          const handleBackFromResults = useCallback(() => {
+            setAppState('complete');
+          }, []);
+
+          const handleSwipe = useCallback((direction) => {
+            if (!currentProfile) return;
+
+            const decision = createDecision(currentProfile, direction);
+            setDecisions(prev => [...prev, decision]);
+            setTriggeredDirection(direction);
+
+            setTimeout(() => {
+              const nextIndex = currentIndex + 1;
+              if (nextIndex >= profiles.length) {
+                setAppState('complete');
+                return;
+              }
+              setCurrentIndex(nextIndex);
+              setTriggeredDirection(null);
+            }, BUTTON_HIGHLIGHT_DURATION);
+          }, [currentProfile, currentIndex, profiles.length]);
+
+          const { handleTouchStart, handleTouchEnd } = useSwipeGesture(handleSwipe);
+
+          if (appState === 'config') {
+            return React.createElement(ConfigurationScreen, { onStart: handleStart });
+          }
+
+          if (appState === 'results') {
+            return React.createElement(ResultsTable, {
+              decisions,
+              config: swipeConfig,
+              onBack: handleBackFromResults
+            });
+          }
+          
+          if (appState === 'complete') {
+            return React.createElement(CompletionScreen, {
+              decisionsCount: decisions.length,
+              onRestart: handleRestart,
+              onReconfigure: handleReconfigure,
+              onViewResults: handleViewResults
+            });
+          }
+
+          return React.createElement('div', {
+            className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col fixed inset-0 overflow-hidden",
+            style: { 
+              touchAction: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none'
+            }
+          },
+            React.createElement('header', { className: "bg-white shadow-sm p-4 relative z-20" },
+              React.createElement('div', { className: "flex justify-between items-center max-w-md mx-auto" },
+                React.createElement('h1', { className: "text-xl font-bold text-gray-800" }, "Contact Updater"),
+                React.createElement('div', { className: "text-sm text-gray-500" },
+                  `${currentIndex + 1} of ${profiles.length}`
+                )
+              )
+            ),
+            React.createElement('main', {
+              className: "flex-1 flex items-center justify-center p-4 relative",
+              style: { 
+                touchAction: 'none',
+                contain: 'layout style paint'
+              }
+            },
+              React.createElement(BackgroundCard, { index: 0, visible: currentIndex < profiles.length - 1 }),
+              React.createElement(BackgroundCard, { index: 1, visible: currentIndex < profiles.length - 2 }),
+              React.createElement(ProfileCard, {
+                profile: currentProfile,
+                config: swipeConfig,
+                triggeredDirection,
+                onSwipe: handleSwipe,
+                onTouchStart: handleTouchStart,
+                onTouchEnd: handleTouchEnd
+              })
+            ),
+            React.createElement('footer', { className: "bg-white border-t p-4 relative z-20" },
+              React.createElement('div', { className: "max-w-md mx-auto text-center text-sm text-gray-500" },
+                `Reviewed: ${decisions.length} | Remaining: ${profiles.length - currentIndex}`
+              )
+            )
+          );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(LinkedInSwipeApp));
     </script>
 </body>
 </html>
