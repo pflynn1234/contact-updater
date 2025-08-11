@@ -431,12 +431,39 @@
           const [crmData, setCrmData] = useState('');
           const [profiles, setProfiles] = useState(SAMPLE_PROFILES);
           const [dataSource, setDataSource] = useState('sample');
+          const [isDragging, setIsDragging] = useState(false);
           
           const handleConfigChange = useCallback((direction, value) => {
             setSwipeConfig(prev => ({
               ...prev,
               [direction]: { ...prev[direction], label: value }
             }));
+          }, []);
+
+          const processFile = useCallback((file) => {
+            if (!file || !file.name.toLowerCase().endsWith('.csv')) {
+              alert('Please upload a CSV file');
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const text = e.target.result;
+              setCrmData(text);
+              try {
+                const parsedProfiles = parseCsvData(text);
+                if (parsedProfiles.length > 0) {
+                  setProfiles(parsedProfiles);
+                  setDataSource('csv');
+                } else {
+                  alert('No valid profiles found in CSV. Please check your data format.');
+                }
+              } catch (error) {
+                console.error('Error parsing CSV:', error);
+                alert('Error reading CSV file. Please check the format.');
+              }
+            };
+            reader.readAsText(file);
           }, []);
           
           const handleCRMUpload = useCallback((event) => {
@@ -453,6 +480,32 @@
               }
             }
           }, []);
+
+          const handleFileSelect = useCallback((event) => {
+            const file = event.target.files[0];
+            if (file) {
+              processFile(file);
+            }
+          }, [processFile]);
+
+          const handleDragOver = useCallback((e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }, []);
+
+          const handleDragLeave = useCallback((e) => {
+            e.preventDefault();
+            setIsDragging(false);
+          }, []);
+
+          const handleDrop = useCallback((e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const file = e.dataTransfer.files[0];
+            if (file) {
+              processFile(file);
+            }
+          }, [processFile]);
           
           const handleDataSourceChange = useCallback((source) => {
             setDataSource(source);
@@ -521,20 +574,94 @@
                           onChange: () => handleDataSourceChange('csv'),
                           className: "mr-2"
                         }),
-                        "Upload CSV Data"
+                        "Upload Your Data"
                       )
                     )
                   ),
                   dataSource === 'csv' && React.createElement('div', {},
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-2" },
-                      "Paste your CRM data (CSV format)"
+                    React.createElement('div', { className: "mb-4" },
+                      React.createElement('h3', { className: "text-lg font-medium text-gray-700 mb-3" }, "Choose Upload Method:"),
+                      
+                      // Drag & Drop Area
+                      React.createElement('div', {
+                        className: `border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                        }`,
+                        onDragOver: handleDragOver,
+                        onDragLeave: handleDragLeave,
+                        onDrop: handleDrop
+                      },
+                        React.createElement('div', { className: "space-y-3" },
+                          React.createElement(Upload, { className: "w-12 h-12 text-gray-400 mx-auto" }),
+                          React.createElement('div', {},
+                            React.createElement('p', { className: "text-lg font-medium text-gray-900" }, "Drag & Drop CSV File"),
+                            React.createElement('p', { className: "text-sm text-gray-500" }, "Or click to browse files")
+                          ),
+                          React.createElement('input', {
+                            type: "file",
+                            accept: ".csv",
+                            onChange: handleFileSelect,
+                            className: "hidden",
+                            id: "csv-file-input"
+                          }),
+                          React.createElement('label', {
+                            htmlFor: "csv-file-input",
+                            className: "inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors"
+                          }, "Choose CSV File")
+                        )
+                      ),
+                      
+                      React.createElement('div', { className: "text-center my-4" },
+                        React.createElement('span', { className: "text-gray-500 bg-white px-3" }, "OR")
+                      )
                     ),
-                    React.createElement('textarea', {
-                      value: crmData,
-                      onChange: handleCRMUpload,
-                      className: "w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm",
-                      placeholder: "Name,LinkedIn URL,Title,Company\nJohn Smith,linkedin.com/in/johnsmith,Manager,TechCorp\nJane Doe,linkedin.com/in/janedoe,Director,StartupXYZ"
-                    })
+                    
+                    // Text Area Method
+                    React.createElement('div', {},
+                      React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-2" },
+                        "Copy & Paste CSV Data"
+                      ),
+                      React.createElement('p', { className: "text-sm text-gray-500 mb-3" },
+                        "✅ Supports: First Name, Last Name, LinkedIn Profile (minimum required)",
+                        React.createElement('br', {}),
+                        "✅ Optional: Title, Company, Full Name",
+                        React.createElement('br', {}),
+                        "💡 Tip: Download CSV from Google Sheets, then copy/paste the content here"
+                      ),
+                      React.createElement('textarea', {
+                        value: crmData,
+                        onChange: handleCRMUpload,
+                        className: "w-full h-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm",
+                        placeholder: "First Name,Last Name,LinkedIn Profile\nJohn,Smith,linkedin.com/in/johnsmith\nJane,Doe,linkedin.com/in/janedoe"
+                      })
+                    ),
+                    
+                    // Preview
+                    profiles.length > 0 && dataSource === 'csv' && React.createElement('div', { className: "mt-4 p-4 bg-green-50 rounded-lg border border-green-200" },
+                      React.createElement('h3', { className: "font-medium text-green-800 mb-2 flex items-center gap-2" },
+                        "✅ Data Loaded Successfully!",
+                        React.createElement('span', { className: "text-sm font-normal" }, `(${profiles.length} profiles)`)
+                      ),
+                      React.createElement('div', { className: "space-y-1 max-h-32 overflow-y-auto" },
+                        profiles.slice(0, 3).map(profile =>
+                          React.createElement('div', { key: profile.id, className: "text-sm flex items-center gap-2" },
+                            React.createElement('span', { className: "text-lg" }, profile.emoji),
+                            React.createElement('span', { className: "font-medium" }, profile.name),
+                            profile.title && React.createElement('span', { className: "text-gray-600" }, `- ${profile.title}`),
+                            profile.linkedinUrl && React.createElement('span', { className: "text-green-600" }, "🔗")
+                          )
+                        ),
+                        profiles.length > 3 && React.createElement('div', { className: "text-sm text-gray-600" }, `... and ${profiles.length - 3} more`)
+                      )
+                    )
+                  ),
+                  dataSource === 'sample' && React.createElement('div', { className: "p-4 bg-gray-50 rounded-lg" },
+                    React.createElement('p', { className: "text-sm text-gray-600 mb-2" }, `Using sample data with ${SAMPLE_PROFILES.length} profiles`),
+                    React.createElement('div', { className: "flex gap-2" },
+                      SAMPLE_PROFILES.slice(0, 5).map(profile =>
+                        React.createElement('span', { key: profile.id, className: "text-lg" }, profile.emoji)
+                      )
+                    )
                   )
                 ),
                 React.createElement('div', { className: "flex justify-center" },
