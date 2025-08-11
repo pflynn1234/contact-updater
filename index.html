@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=portrait">
     <title>Contact Updater - LinkedIn Swipe App</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -23,6 +23,27 @@
         
         #root {
             min-height: 100vh;
+        }
+        
+        /* Force portrait orientation on mobile */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            body::before {
+                content: "Please rotate your device to portrait mode for the best experience";
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                text-align: center;
+                padding: 20px;
+                font-size: 18px;
+            }
         }
         
         /* Prevent zoom on mobile */
@@ -54,6 +75,13 @@
             position: fixed;
             inset: 0;
             touch-action: none;
+        }
+
+        /* Company logo styling */
+        .company-logo {
+            object-fit: contain;
+            background: white;
+            border: 2px solid #e5e7eb;
         }
     </style>
 </head>
@@ -166,19 +194,31 @@
         ]);
 
         const SAMPLE_PROFILES = Object.freeze([
-          { id: 1, name: "Sarah Johnson", emoji: "🍎", color: "bg-red-100", linkedinUrl: "https://www.linkedin.com/in/sarah-johnson" },
-          { id: 2, name: "Michael Chen", emoji: "🥕", color: "bg-orange-100", linkedinUrl: "https://www.linkedin.com/in/michael-chen" },
-          { id: 3, name: "Emily Rodriguez", emoji: "🍌", color: "bg-yellow-100", linkedinUrl: "https://www.linkedin.com/in/emily-rodriguez" },
-          { id: 4, name: "David Park", emoji: "🥒", color: "bg-green-100", linkedinUrl: "https://www.linkedin.com/in/david-park" },
-          { id: 5, name: "Lisa Thompson", emoji: "🍇", color: "bg-purple-100", linkedinUrl: "https://www.linkedin.com/in/lisa-thompson" },
-          { id: 6, name: "James Wilson", emoji: "🍓", color: "bg-pink-100", linkedinUrl: "https://www.linkedin.com/in/james-wilson" },
-          { id: 7, name: "Amanda Martinez", emoji: "🥝", color: "bg-green-200", linkedinUrl: "https://www.linkedin.com/in/amanda-martinez" },
-          { id: 8, name: "Robert Kim", emoji: "🍊", color: "bg-orange-200", linkedinUrl: "https://www.linkedin.com/in/robert-kim" }
+          { id: 1, name: "Sarah Johnson", emoji: "🍎", color: "bg-red-100", linkedinUrl: "https://www.linkedin.com/in/sarah-johnson", title: "Senior Product Manager", company: "Microsoft" },
+          { id: 2, name: "Michael Chen", emoji: "🥕", color: "bg-orange-100", linkedinUrl: "https://www.linkedin.com/in/michael-chen", title: "Software Engineer", company: "Google" },
+          { id: 3, name: "Emily Rodriguez", emoji: "🍌", color: "bg-yellow-100", linkedinUrl: "https://www.linkedin.com/in/emily-rodriguez", title: "Marketing Director", company: "Apple" },
+          { id: 4, name: "David Park", emoji: "🥒", color: "bg-green-100", linkedinUrl: "https://www.linkedin.com/in/david-park", title: "Data Scientist", company: "Amazon" },
+          { id: 5, name: "Lisa Thompson", emoji: "🍇", color: "bg-purple-100", linkedinUrl: "https://www.linkedin.com/in/lisa-thompson", title: "UX Designer", company: "Meta" },
+          { id: 6, name: "James Wilson", emoji: "🍓", color: "bg-pink-100", linkedinUrl: "https://www.linkedin.com/in/james-wilson", title: "Sales Manager", company: "Salesforce" },
+          { id: 7, name: "Amanda Martinez", emoji: "🥝", color: "bg-green-200", linkedinUrl: "https://www.linkedin.com/in/amanda-martinez", title: "DevOps Engineer", company: "Netflix" },
+          { id: 8, name: "Robert Kim", emoji: "🍊", color: "bg-orange-200", linkedinUrl: "https://www.linkedin.com/in/robert-kim", title: "Product Designer", company: "Uber" }
         ]);
 
         // ============================================================================
         // UTILITIES
         // ============================================================================
+
+        const getCompanyLogoUrl = (companyName) => {
+          if (!companyName) return null;
+          
+          // Clean company name for logo API
+          const cleanName = companyName.toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+            .replace(/inc|corp|corporation|ltd|llc|company|co/g, '');
+            
+          // Use Clearbit Logo API for company logos
+          return `https://logo.clearbit.com/${cleanName}.com`;
+        };
 
         const findColumnIndex = (headers, fields) => {
           for (const field of fields) {
@@ -358,21 +398,20 @@
           
           const styles = useMemo(() => {
             const configs = [
-              { scale: 'scale-95', opacity: 'opacity-30', translateY: 'translate-y-2', shadow: 'shadow-lg' },
-              { scale: 'scale-90', opacity: 'opacity-20', translateY: 'translate-y-4', shadow: 'shadow-md' }
+              { scale: 'scale-95', opacity: 'opacity-30', translateY: 'translate-y-3', shadow: 'shadow-lg' },
+              { scale: 'scale-90', opacity: 'opacity-20', translateY: 'translate-y-6', shadow: 'shadow-md' }
             ];
             return configs[index] || configs[1];
           }, [index]);
           
           return React.createElement('div', {
-            className: `absolute bg-white rounded-2xl ${styles.shadow} ${styles.opacity} transform ${styles.scale} ${styles.translateY}`,
+            className: `absolute bg-white rounded-3xl ${styles.shadow} ${styles.opacity} transform ${styles.scale} ${styles.translateY}`,
             style: {
-              width: '320px',
-              height: '200px',
+              width: 'min(380px, calc(100vw - 2rem))',
+              height: 'min(500px, calc(100vh - 8rem))',
               left: '50%',
               top: '50%',
-              marginLeft: '-160px',
-              marginTop: '-100px'
+              transform: `translate(-50%, -50%) ${styles.scale} ${styles.translateY}`
             },
             'aria-hidden': true
           });
@@ -386,6 +425,9 @@
           onTouchStart,
           onTouchEnd
         }) => {
+          const [logoError, setLogoError] = useState(false);
+          const companyLogoUrl = getCompanyLogoUrl(profile.company);
+          
           const handleButtonClick = useCallback((direction) => {
             onSwipe(direction);
           }, [onSwipe]);
@@ -400,8 +442,17 @@
             }
           }, [profile.linkedinUrl]);
 
+          const handleLogoError = useCallback(() => {
+            setLogoError(true);
+          }, []);
+
           return React.createElement('div', {
-            className: "bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 select-none relative z-10",
+            className: "bg-white rounded-3xl shadow-2xl w-full mx-4 select-none relative z-10",
+            style: {
+              width: 'min(380px, calc(100vw - 2rem))',
+              height: 'min(500px, calc(100vh - 8rem))',
+              maxWidth: '380px'
+            },
             onTouchStart,
             onTouchEnd
           }, 
@@ -414,30 +465,50 @@
                 onClick: handleButtonClick
               })
             ),
-            React.createElement('div', { className: "p-6 text-center relative" },
-              React.createElement('div', {
-                className: `w-32 h-32 mx-auto mb-2 rounded-full shadow-lg ${profile.color} flex items-center justify-center`
-              }, React.createElement('span', {
-                className: "text-6xl",
-                role: "img",
-                'aria-label': "Profile avatar"
-              }, profile.emoji)),
+            React.createElement('div', { className: "p-6 text-center relative flex flex-col h-full justify-center" },
+              // Avatar/Logo Section
               React.createElement('div', { className: "mb-6" },
+                profile.company && companyLogoUrl && !logoError ? 
+                  React.createElement('img', {
+                    src: companyLogoUrl,
+                    alt: `${profile.company} logo`,
+                    className: "w-32 h-32 mx-auto rounded-2xl company-logo object-contain",
+                    onError: handleLogoError
+                  }) :
+                  React.createElement('div', {
+                    className: `w-32 h-32 mx-auto rounded-full shadow-lg ${profile.color} flex items-center justify-center`
+                  }, React.createElement('span', {
+                    className: "text-6xl",
+                    role: "img",
+                    'aria-label': "Profile avatar"
+                  }, profile.emoji))
+              ),
+              
+              // Name Section (Linked)
+              React.createElement('div', { className: "mb-4" },
                 profile.linkedinUrl ? 
                   React.createElement('button', {
                     onClick: handleLinkClick,
-                    className: "text-2xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors z-50 relative"
+                    className: "text-2xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors z-50 relative leading-tight"
                   }, profile.name) :
                   React.createElement('h3', {
-                    className: "text-2xl font-bold text-gray-800"
+                    className: "text-2xl font-bold text-gray-800 leading-tight"
                   }, profile.name)
               ),
-              profile.title && React.createElement('p', {
-                className: "text-gray-600 text-sm mb-1"
-              }, profile.title),
-              profile.company && React.createElement('p', {
-                className: "text-gray-500 text-sm"
-              }, profile.company)
+              
+              // Title Section
+              profile.title && React.createElement('div', { className: "mb-3" },
+                React.createElement('p', {
+                  className: "text-lg font-semibold text-gray-700"
+                }, profile.title)
+              ),
+              
+              // Company Section
+              profile.company && React.createElement('div', { className: "mb-2" },
+                React.createElement('p', {
+                  className: "text-base text-gray-600 font-medium"
+                }, profile.company)
+              )
             )
           );
         });
@@ -502,34 +573,6 @@
                 ),
                 React.createElement('div', { className: "mb-8" },
                   React.createElement('h2', { className: "text-xl font-semibold text-gray-800 mb-4" }, "Configure Swipe Directions"),
-                  React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-                    Object.entries(SWIPE_ACTIONS).map(([key, direction]) =>
-                      React.createElement('div', { key: direction, className: "border rounded-lg p-4" },
-                        React.createElement('h3', { className: "font-medium text-gray-700 mb-3 capitalize flex items-center gap-2" },
-                          React.createElement('span', { className: `w-4 h-4 rounded-full ${SWIPE_CONFIG[direction].bgClass}` }),
-                          `${direction} Direction ${SWIPE_CONFIG[direction].label === 'SUPER WARM' ? '⬆️' : 
-                                               SWIPE_CONFIG[direction].label === 'UNKNOWN' ? '⬇️' :
-                                               SWIPE_CONFIG[direction].label === "DON'T INCLUDE" ? '⬅️' : '➡️'}`
-                        ),
-                        React.createElement('div', {},
-                          React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-1" }, "Label"),
-                          React.createElement('input', {
-                            type: "text",
-                            value: swipeConfig[direction].label,
-                            onChange: (e) => handleConfigChange(direction, e.target.value),
-                            className: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
-                            placeholder: "Enter action label"
-                          })
-                        )
-                      )
-                    )
-                  )
-                ),
-                React.createElement('div', { className: "mb-8" },
-                  React.createElement('h2', { className: "text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2" },
-                    React.createElement(Upload, { className: "w-5 h-5" }),
-                    "CRM Data"
-                  ),
                   React.createElement('div', { className: "mb-4" },
                     React.createElement('div', { className: "flex gap-4 mb-4" },
                       React.createElement('label', { className: "flex items-center" },
@@ -573,7 +616,8 @@
                             React.createElement('span', { className: "text-lg" }, profile.emoji),
                             React.createElement('span', { className: "font-medium" }, profile.name),
                             profile.title && React.createElement('span', { className: "text-gray-500" }, `- ${profile.title}`),
-                            profile.linkedinUrl && React.createElement('span', { className: "text-blue-500" }, "✓")
+                            profile.company && React.createElement('span', { className: "text-blue-500" }, `at ${profile.company}`),
+                            profile.linkedinUrl && React.createElement('span', { className: "text-green-500" }, "✓")
                           )
                         ),
                         profiles.length > 5 && React.createElement('div', { className: "text-sm text-gray-500" }, `... and ${profiles.length - 5} more`)
@@ -841,9 +885,9 @@
               WebkitTouchCallout: 'none'
             }
           },
-            React.createElement('header', { className: "bg-white shadow-sm p-4 relative z-20" },
-              React.createElement('div', { className: "flex justify-between items-center max-w-md mx-auto" },
-                React.createElement('h1', { className: "text-xl font-bold text-gray-800" }, "Contact Updater"),
+            React.createElement('header', { className: "bg-white shadow-sm p-3 relative z-20" },
+              React.createElement('div', { className: "flex justify-between items-center max-w-sm mx-auto" },
+                React.createElement('h1', { className: "text-lg font-bold text-gray-800" }, "Contact Updater"),
                 React.createElement('div', { className: "text-sm text-gray-500" },
                   `${currentIndex + 1} of ${profiles.length}`
                 )
@@ -867,8 +911,8 @@
                 onTouchEnd: handleTouchEnd
               })
             ),
-            React.createElement('footer', { className: "bg-white border-t p-4 relative z-20" },
-              React.createElement('div', { className: "max-w-md mx-auto text-center text-sm text-gray-500" },
+            React.createElement('footer', { className: "bg-white border-t p-3 relative z-20" },
+              React.createElement('div', { className: "max-w-sm mx-auto text-center text-sm text-gray-500" },
                 `Reviewed: ${decisions.length} | Remaining: ${profiles.length - currentIndex}`
               )
             )
@@ -880,4 +924,32 @@
         root.render(React.createElement(LinkedInSwipeApp));
     </script>
 </body>
-</html>
+</html>: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                    Object.entries(SWIPE_ACTIONS).map(([key, direction]) =>
+                      React.createElement('div', { key: direction, className: "border rounded-lg p-4" },
+                        React.createElement('h3', { className: "font-medium text-gray-700 mb-3 capitalize flex items-center gap-2" },
+                          React.createElement('span', { className: `w-4 h-4 rounded-full ${SWIPE_CONFIG[direction].bgClass}` }),
+                          `${direction} Direction ${SWIPE_CONFIG[direction].label === 'SUPER WARM' ? '⬆️' : 
+                                               SWIPE_CONFIG[direction].label === 'UNKNOWN' ? '⬇️' :
+                                               SWIPE_CONFIG[direction].label === "DON'T INCLUDE" ? '⬅️' : '➡️'}`
+                        ),
+                        React.createElement('div', {},
+                          React.createElement('label', { className: "block text-sm font-medium text-gray-600 mb-1" }, "Label"),
+                          React.createElement('input', {
+                            type: "text",
+                            value: swipeConfig[direction].label,
+                            onChange: (e) => handleConfigChange(direction, e.target.value),
+                            className: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                            placeholder: "Enter action label"
+                          })
+                        )
+                      )
+                    )
+                  )
+                ),
+                React.createElement('div', { className: "mb-8" },
+                  React.createElement('h2', { className: "text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2" },
+                    React.createElement(Upload, { className: "w-5 h-5" }),
+                    "CRM Data"
+                  ),
+                  React.createElement('div', { className
