@@ -354,6 +354,11 @@
             }
           }, [profile.linkedinUrl]);
 
+          // Split name into first and last if it's a full name
+          const nameParts = profile.name.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
           return React.createElement('div', {
             className: "bg-white rounded-3xl shadow-2xl w-full mx-4 select-none relative z-10",
             style: {
@@ -375,44 +380,51 @@
             ),
             React.createElement('div', { className: "p-6 text-center relative flex flex-col h-full justify-center" },
               // Avatar/Logo Section
-              React.createElement('div', { className: "mb-6" },
+              React.createElement('div', { className: "mb-4" },
                 profile.company && companyLogoUrl && !logoError ? 
                   React.createElement('img', {
                     src: companyLogoUrl,
                     alt: `${profile.company} logo`,
-                    className: "w-32 h-32 mx-auto rounded-2xl company-logo object-contain",
+                    className: "w-24 h-24 mx-auto rounded-2xl company-logo object-contain",
                     onError: () => setLogoError(true)
                   }) :
                   React.createElement('div', {
-                    className: `w-32 h-32 mx-auto rounded-full shadow-lg ${profile.color} flex items-center justify-center`
+                    className: `w-24 h-24 mx-auto rounded-full shadow-lg ${profile.color} flex items-center justify-center`
                   }, React.createElement('span', {
-                    className: "text-6xl"
+                    className: "text-4xl"
                   }, profile.emoji))
               ),
               
-              // Name Section (Linked)
-              React.createElement('div', { className: "mb-4" },
+              // First Name Section (Linked)
+              React.createElement('div', { className: "mb-1" },
                 profile.linkedinUrl ? 
                   React.createElement('button', {
                     onClick: handleLinkClick,
                     className: "text-2xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors z-50 relative leading-tight"
-                  }, profile.name) :
+                  }, firstName) :
                   React.createElement('h3', {
                     className: "text-2xl font-bold text-gray-800 leading-tight"
-                  }, profile.name)
+                  }, firstName)
+              ),
+              
+              // Last Name Section
+              lastName && React.createElement('div', { className: "mb-3" },
+                React.createElement('p', {
+                  className: "text-xl font-semibold text-gray-700"
+                }, lastName)
               ),
               
               // Title Section
-              profile.title && React.createElement('div', { className: "mb-3" },
+              profile.title && React.createElement('div', { className: "mb-2" },
                 React.createElement('p', {
-                  className: "text-lg font-semibold text-gray-700"
+                  className: "text-base font-medium text-gray-600"
                 }, profile.title)
               ),
               
               // Company Section
               profile.company && React.createElement('div', { className: "mb-2" },
                 React.createElement('p', {
-                  className: "text-base text-gray-600 font-medium"
+                  className: "text-base text-gray-500 font-medium"
                 }, profile.company)
               )
             )
@@ -622,11 +634,13 @@
                         "Copy & Paste CSV Data"
                       ),
                       React.createElement('p', { className: "text-sm text-gray-500 mb-3" },
-                        "✅ Supports: First Name, Last Name, LinkedIn Profile (minimum required)",
+                        "✅ Required: First Name, Last Name, LinkedIn Profile",
                         React.createElement('br', {}),
-                        "✅ Optional: Title, Company, Full Name",
+                        "✅ Optional: Title, Company (for logos), Full Name",
                         React.createElement('br', {}),
-                        "💡 Tip: Download CSV from Google Sheets, then copy/paste the content here"
+                        "💡 Company logos appear automatically if Company column included",
+                        React.createElement('br', {}),
+                        "🔗 LinkedIn URLs can't auto-extract company info"
                       ),
                       React.createElement('textarea', {
                         value: crmData,
