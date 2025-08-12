@@ -170,10 +170,10 @@
         });
 
         const SAMPLE_PROFILES = Object.freeze([
-          { id: 1, name: "Sarah Johnson", emoji: "🍎", color: "bg-red-100", linkedinUrl: "https://www.linkedin.com/in/sarah-johnson", title: "Senior Product Manager", company: "Microsoft" },
-          { id: 2, name: "Michael Chen", emoji: "🥕", color: "bg-orange-100", linkedinUrl: "https://www.linkedin.com/in/michael-chen", title: "Software Engineer", company: "Google" },
-          { id: 3, name: "Emily Rodriguez", emoji: "🍌", color: "bg-yellow-100", linkedinUrl: "https://www.linkedin.com/in/emily-rodriguez", title: "Marketing Director", company: "Apple" },
-          { id: 4, name: "David Park", emoji: "🥒", color: "bg-green-100", linkedinUrl: "https://www.linkedin.com/in/david-park", title: "Data Scientist", company: "Amazon" }
+          { id: 1, name: "Sarah Johnson", firstName: "Sarah", lastName: "Johnson", emoji: "🍎", color: "bg-red-100", linkedinUrl: "https://www.linkedin.com/in/sarah-johnson", title: "Senior Product Manager", company: "Microsoft" },
+          { id: 2, name: "Michael Chen", firstName: "Michael", lastName: "Chen", emoji: "🥕", color: "bg-orange-100", linkedinUrl: "https://www.linkedin.com/in/michael-chen", title: "Software Engineer", company: "Google" },
+          { id: 3, name: "Emily Rodriguez", firstName: "Emily", lastName: "Rodriguez", emoji: "🍌", color: "bg-yellow-100", linkedinUrl: "https://www.linkedin.com/in/emily-rodriguez", title: "Marketing Director", company: "Apple" },
+          { id: 4, name: "David Park", firstName: "David", lastName: "Park", emoji: "🥒", color: "bg-green-100", linkedinUrl: "https://www.linkedin.com/in/david-park", title: "Data Scientist", company: "Amazon" }
         ]);
 
         // Utilities
@@ -207,16 +207,33 @@
           return lines.slice(1).reduce((profiles, line, index) => {
             const row = line.split(/[,\t]/).map(cell => cell.trim().replace(/['"]/g, ''));
             
-            let name = '';
-            if (nameCol !== -1) {
-              name = row[nameCol] || '';
-            } else if (firstNameCol !== -1 && lastNameCol !== -1) {
-              name = `${row[firstNameCol] || ''} ${row[lastNameCol] || ''}`.trim();
-            } else if (firstNameCol !== -1) {
-              name = row[firstNameCol] || '';
+            let firstName = '';
+            let lastName = '';
+            let fullName = '';
+            
+            // Handle first/last name separately if available
+            if (firstNameCol !== -1) {
+              firstName = row[firstNameCol] || '';
+            }
+            if (lastNameCol !== -1) {
+              lastName = row[lastNameCol] || '';
             }
             
-            if (!name) return profiles;
+            // If we have separate first/last, combine for full name
+            if (firstName || lastName) {
+              fullName = `${firstName} ${lastName}`.trim();
+            }
+            
+            // Otherwise try to get full name from name column
+            if (!fullName && nameCol !== -1) {
+              fullName = row[nameCol] || '';
+              // Split full name into first/last if we don't have them separately
+              const nameParts = fullName.split(' ');
+              firstName = firstName || nameParts[0] || '';
+              lastName = lastName || nameParts.slice(1).join(' ') || '';
+            }
+            
+            if (!fullName && !firstName) return profiles;
             
             let linkedinUrl = linkedinCol !== -1 ? row[linkedinCol] : '';
             if (linkedinUrl && !linkedinUrl.startsWith('http')) {
@@ -228,7 +245,9 @@
             
             profiles.push({
               id: index + 1,
-              name,
+              name: fullName,
+              firstName: firstName,
+              lastName: lastName,
               linkedinUrl,
               title,
               company,
@@ -354,11 +373,6 @@
             }
           }, [profile.linkedinUrl]);
 
-          // Split name into first and last if it's a full name
-          const nameParts = profile.name.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
           return React.createElement('div', {
             className: "bg-white rounded-3xl shadow-2xl w-full mx-4 select-none relative z-10",
             style: {
@@ -396,22 +410,22 @@
               ),
               
               // First Name Section (Linked)
-              React.createElement('div', { className: "mb-1" },
+              profile.firstName && React.createElement('div', { className: "mb-1" },
                 profile.linkedinUrl ? 
                   React.createElement('button', {
                     onClick: handleLinkClick,
                     className: "text-2xl font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors z-50 relative leading-tight"
-                  }, firstName) :
+                  }, profile.firstName) :
                   React.createElement('h3', {
                     className: "text-2xl font-bold text-gray-800 leading-tight"
-                  }, firstName)
+                  }, profile.firstName)
               ),
               
               // Last Name Section
-              lastName && React.createElement('div', { className: "mb-3" },
+              profile.lastName && React.createElement('div', { className: "mb-3" },
                 React.createElement('p', {
                   className: "text-xl font-semibold text-gray-700"
-                }, lastName)
+                }, profile.lastName)
               ),
               
               // Title Section
